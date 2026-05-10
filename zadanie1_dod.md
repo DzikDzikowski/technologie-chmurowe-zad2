@@ -1,35 +1,45 @@
- # Sprawozdanie z części dodatkowej - Zadanie 1 (Opcja +80%)
+Sprawozdanie z części dodatkowej
 
-**Autor:** Hubert  
-**DockerHub Repo:** https://hub.docker.com/repository/docker/hubszy/zadanie1/general  
+Autor: Hubert Szydłowski
 
-## 1. Wybór wariantu
-Zrealizowano najtrudniejszy wariant (+80%), obejmujący multi-arch (linux/amd64, linux/arm64), driver `docker-container`, wykorzystanie cache w trybie MAX na zewnętrznym rejestrze oraz pobieranie kodu aplikacji z repozytorium przez `mount=type=secret` z pomocą BuildKit.
+DockerHub Repo:
 
-## 2. Analiza bezpieczeństwa (Trivy / CVE)
+https://hub.docker.com/repository/docker/hubszy/zadanie1/general  
+
+1. Wybór wariantu:
+
+Multi-arch (linux/amd64, linux/arm64), driver `docker-container`, wykorzystałem cache w trybie MAX na zewnętrznym rejestrze oraz pobieranie kodu aplikacji z repozytorium przez `mount=type=secret` z pomocą BuildKit.
+
+2. Analiza bezpieczeństwa przy użyciu Trivy:
+
 Obraz został przeskanowany za pomocą narzędzia Trivy. 
 
-**Wynik skanowania:** `Total: 15 (UNKNOWN: 0, LOW: 2, MEDIUM: 2, HIGH: 11, CRITICAL: 0)`
+Wynik skanowania: `Total: 15 (UNKNOWN: 0, LOW: 2, MEDIUM: 2, HIGH: 11, CRITICAL: 0)`
 
-**Uzasadnienie zignorowania podatności HIGH:**
-Wykryte podatności o statusie HIGH (np. w pakietach `tar`, `cross-spawn`, `minimatch`, `glob`) dotyczą wyłącznie wewnętrznych narzędzi i zależności menedżera pakietów `npm`, który jest fabrycznie dołączony do obrazu bazowego `node:20-alpine`. 
-Nasza aplikacja to prosty serwer HTTP, który w środowisku produkcyjnym nie wykorzystuje menedżera `npm`, nie przetwarza plików archiwów (`tar`) ani nie wykonuje poleceń powłoki systemowej na podstawie danych wejściowych użytkownika. Ze względu na brak wektora ataku w kontekście działania tej aplikacji, wykryte podatności można bezpiecznie zignorować.
+Uzasadnienie zignorowania podatności HIGH:
 
-*Poniżej znajduje się zrzut ekranu z wynikiem polecenia skanującego:*
-![Skanowanie CVE](./cve_scan.png)
+Wykryte podatności o statusie HIGH dotyczą wyłącznie wewnętrznych narzędzi i zależności menedżera pakietów `npm`, który jest fabrycznie dołączony do obrazu bazowego `node:20-alpine`. 
+Aplikacja to prosty serwer HTTP, który nie wykorzystuje menedżera `npm`, nie przetwarza plików archiwów (`tar`) ani nie wykonuje poleceń powłoki systemowej na podstawie danych wejściowych użytkownika. Ze względu na brak realnego zagrożenia ataku w kontekście działania tej aplikacji, wykryte podatności można bezpiecznie zignorować.
 
-## 3. Optymalizacja i warstwy (Dockerfile)
-Plik `Dockerfile` został wysoce zoptymalizowany:
-- **Multi-stage build**: Umożliwia przygotowanie środowiska w pierwszej fazie, nie zaśmiecając finalnego obrazu narzędziami.
-- **Healthcheck**: Wbudowany mechanizm sprawdzający sprawność kontenera na porcie 8080.
-- **Uprawnienia**: Zastosowano `USER node` zamiast root'a dla bezpieczeństwa.
+![Skanowanie CVE](<wynik_skanu.png>)
 
-## 4. Polecenia użyte do budowy zaawansowanej (Buildx)
+3. Optymalizacja i warstwy:
 
-**Inicjalizacja buildera (`docker-container`):**
+Plik Dockerfile został wysoce zoptymalizowany:
+
+- Multi-stage build: Umożliwia przygotowanie środowiska w pierwszej fazie, nie zaśmiecając finalnego obrazu narzędziami.
+
+- Healthcheck: Wbudowany mechanizm sprawdzający sprawność kontenera na porcie 8080.
+
+- Uprawnienia: Zastosowano USER node zamiast roota dla bezpieczeństwa.
+
+4. Polecenia użyte do budowy zaawansowanej - Buildx
+
+Inicjalizacja buildera:
+
 `docker buildx create --use --name my-advanced-builder --driver docker-container`
 
-**Budowanie obrazu (Multi-arch, Secret, Cache Max z Registry):**
+Budowanie obrazu:
+
 `docker buildx build --push --platform linux/amd64,linux/arm64 --secret id=my_secret,src=secret.txt --cache-to type=registry,ref=hubszy/zadanie1:cache,mode=max --cache-from type=registry,ref=hubszy/zadanie1:cache -t hubszy/zadanie1:v2-dodatkowe .`
 
-Potwierdzam, że manifest zawiera deklaracje dla dwóch platform sprzętowych, a dane cache zostały wypchnięte do rejestru i są poprawnie utylizowane.

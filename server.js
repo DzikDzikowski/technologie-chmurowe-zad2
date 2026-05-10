@@ -44,6 +44,6 @@ const server = http.createServer(async (req, res) => {
 const PORT = 8080;
 server.listen(PORT, () => {
     console.log(`[Data uruchomienia]: ${new Date().toISOString()}`);
-    console.log(`[Autor]: Hubert`);
+    console.log(`[Autor]: Hubert Szydlowski`);
     console.log(`[Port TCP]: ${PORT}`);
 });
