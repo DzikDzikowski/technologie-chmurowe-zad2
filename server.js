@@ -1,72 +1,49 @@
 const http = require('http');
 
-const server = http.createServer((req, res) => {
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+const cities = {
+    "Warszawa": { lat: 52.2298, lon: 21.0118 },
+    "Lublin": { lat: 51.2465, lon: 22.5684 },
+    "Berlin": { lat: 52.5200, lon: 13.4050 },
+    "Monachium": { lat: 48.1371, lon: 11.5754 }
+};
 
-    
+const server = http.createServer(async (req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     const url = new URL(req.url, `http://${req.headers.host}`);
     const city = url.searchParams.get('city');
 
-    let weatherInfo = '';
-    if (city) {
-        const temp = Math.floor(Math.random() * 30);
-        weatherInfo = `<h2>Pogoda dla: ${city}</h2><p>Temperatura: ${temp}°C</p><a href="/">Powrót</a>`;
+    if (city && cities[city]) {
+        try {
+            const { lat, lon } = cities[city];
+            const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+            const data = await response.json();
+            const temp = data.current_weather.temperature;
+            
+            res.end(`<h2>Pogoda dla: ${city}</h2><p>Aktualna temperatura: <b>${temp}°C</b></p><a href="/">Powrót</a>`);
+        } catch (error) {
+            res.end(`<h2>Błąd pobierania pogody</h2><a href="/">Powrót</a>`);
+        }
     } else {
-        weatherInfo = `
-            <form id="weatherForm">
-                <label>Wybierz kraj:</label>
-                <select id="country" onchange="updateCities()">
-                    <option value="">--Wybierz--</option>
-                    <option value="Polska">Polska</option>
-                    <option value="Niemcy">Niemcy</option>
-                </select>
-                <br><br>
+        res.end(`
+            <h1>Aplikacja Pogodowa</h1>
+            <p>Autor: Hubert</p>
+            <form>
                 <label>Wybierz miasto:</label>
-                <select id="city" name="city" disabled>
-                    <option value=""> Najpierw wybierz kraj </option>
+                <select name="city">
+                    <option value="Warszawa">Polska - Warszawa</option>
+                    <option value="Lublin">Polska - Lublin</option>
+                    <option value="Berlin">Niemcy - Berlin</option>
+                    <option value="Monachium">Niemcy - Monachium</option>
                 </select>
-                <br><br>
-                <button type="submit">Sprawdź pogodę</button>
+                <button type="submit">Sprawdź</button>
             </form>
-
-            <script>
-                const citiesByCountry = {
-                    "Polska": ["Warszawa", "Lublin", "Kraków"],
-                    "Niemcy": ["Berlin", "Monachium", "Hamburg"]
-                };
-
-                function updateCities() {
-                    const countrySelect = document.getElementById('country');
-                    const citySelect = document.getElementById('city');
-                    const selectedCountry = countrySelect.value;
-
-                    citySelect.innerHTML = '';
-                    if (selectedCountry) {
-                        citySelect.disabled = false;
-                        citiesByCountry[selectedCountry].forEach(city => {
-                            let opt = document.createElement('option');
-                            opt.value = city;
-                            opt.innerHTML = city;
-                            citySelect.appendChild(opt);
-                        });
-                    } else {
-                        citySelect.disabled = true;
-                    }
-                }
-            </script>
-        `;
+        `);
     }
-
-    res.end(`
-        <h1>Aplikacja Pogodowa</h1>
-        <p>Autor: Hubert Szydlowski</p>
-        ${weatherInfo}
-    `);
 });
 
 const PORT = 8080;
 server.listen(PORT, () => {
-    console.log(`Data: ${new Date()}`);
-    console.log(`Autor: Hubert Szydlowski`);
-    console.log(`Port: ${PORT}`);
+    console.log(`[Data uruchomienia]: ${new Date().toISOString()}`);
+    console.log(`[Autor]: Hubert`);
+    console.log(`[Port TCP]: ${PORT}`);
 });
