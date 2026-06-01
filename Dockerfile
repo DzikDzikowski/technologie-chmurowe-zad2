@@ -1,4 +1,4 @@
-S
+
 FROM node:20-alpine AS builder
 
 RUN apk add --no-cache git
