@@ -2,12 +2,13 @@ name: CI/CD Pipeline Zadanie 2
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
   build-test-push:
-    [cite_start]runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
@@ -48,29 +49,26 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          load: true 
+          load: true
           tags: local-test-image:latest
 
-    
       - name: Test CVE (Trivy)
         uses: aquasec/trivy-action@master
         with:
           image-ref: 'local-test-image:latest'
           format: 'table'
-          exit-code: '1' 
+          exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-          trivyignores: '.trivyignore' 
+          trivyignores: '.trivyignore'
 
-      
       - name: Budowa wieloarchitekturowa i Push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          [cite_start]platforms: linux/amd64,linux/arm64
-          [cite_start]tags: ${{ steps.meta.outputs.tags }} 
-         
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
           cache-to: type=registry,ref=${{ vars.DOCKERHUB_USERNAME }}/zadanie2-cache:cache,mode=max
           cache-from: type=registry,ref=${{ vars.DOCKERHUB_USERNAME }}/zadanie2-cache:cache
