@@ -53,7 +53,7 @@ jobs:
           tags: local-test-image:latest
 
       - name: Test CVE (Trivy)
-        uses: aquasec/trivy-action@master
+        uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'local-test-image:latest'
           format: 'table'
